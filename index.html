@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChangeLab — Coin Change Solver</title>
+<style>
+  :root{
+    --bg:#f4f7f5;--surface:#fff;--ink:#152b25;--muted:#718078;--line:#e2eae5;
+    --green:#176b50;--green2:#218864;--mint:#e1f4e9;--lime:#d6f36a;--orange:#f4a261;
+    --shadow:0 18px 50px rgba(27,65,49,.08);--radius:22px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(ellipse at 85% 0%,#e4f4e9 0,transparent 35%),var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  button,input{font:inherit}
+  .wrap{max-width:1180px;margin:auto;padding:26px 24px 50px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:44px}
+  .brand{display:flex;align-items:center;gap:12px;font-weight:850;font-size:1.15rem;letter-spacing:-.04em}
+  .logo{width:42px;height:42px;background:var(--green);border-radius:14px;display:grid;place-items:center;color:white;box-shadow:0 7px 18px #176b5030}
+  .logo svg{width:23px}
+  .tag{font-size:.8rem;font-weight:750;color:var(--green);background:#e3f3e9;padding:9px 13px;border-radius:999px}
+  .hero{display:grid;grid-template-columns:1.15fr .85fr;gap:28px;align-items:center;margin-bottom:32px}
+  .eyebrow{display:flex;align-items:center;gap:8px;color:var(--green);font-size:.76rem;text-transform:uppercase;letter-spacing:.14em;font-weight:850;margin-bottom:15px}
+  .dot{width:8px;height:8px;background:var(--orange);border-radius:50%}
+  h1{font-size:clamp(2.6rem,5vw,4.6rem);line-height:.99;letter-spacing:-.075em;margin:0 0 19px;max-width:650px}
+  h1 span{color:var(--green2)}
+  .sub{font-size:1.05rem;line-height:1.7;color:var(--muted);max-width:520px;margin:0}
+  .hero-art{position:relative;min-height:220px;display:flex;align-items:center;justify-content:center}
+  .orbit{position:absolute;width:250px;height:250px;border:1px dashed #b8d8c6;border-radius:50%;animation:spin 36s linear infinite}
+  .orbit:before,.orbit:after{content:"";position:absolute;border-radius:50%;background:var(--orange);width:12px;height:12px;top:28px;left:40px}
+  .orbit:after{background:var(--green2);width:9px;height:9px;top:auto;left:auto;right:10px;bottom:54px}
+  .coin-stack{position:relative;width:168px;height:150px;transform:rotate(-7deg)}
+  .coin{position:absolute;width:114px;height:114px;border-radius:50%;display:grid;place-items:center;border:7px double #d4a84f;background:linear-gradient(145deg,#ffe7a2,#f5bf52);color:#855a14;box-shadow:0 10px 0 #d69d32,0 18px 22px #8e7b3c24;font-size:2rem;font-weight:900}
+  .coin.c1{top:0;left:36px}.coin.c2{top:29px;left:0;background:linear-gradient(145deg,#e8f2e8,#9dc6ad);border-color:#6c9c7f;color:#236344;box-shadow:0 10px 0 #76a88a,0 18px 22px #8e7b3c24}.coin.c3{top:38px;left:57px;width:86px;height:86px;font-size:1.5rem;border-width:5px}
+  .layout{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:22px;align-items:start}
+  .panel{background:var(--surface);border:1px solid #e8eee9;border-radius:var(--radius);box-shadow:var(--shadow);padding:26px}
+  .panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:22px}
+  h2{font-size:1.18rem;letter-spacing:-.035em;margin:0 0 6px}
+  .hint{font-size:.87rem;color:var(--muted);line-height:1.5;margin:0}
+  .step{width:32px;height:32px;border-radius:11px;background:var(--mint);color:var(--green);font-weight:850;display:grid;place-items:center;flex-shrink:0}
+  .currency{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+  .currency button,.ghost{border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:10px;padding:9px 12px;font-weight:750;font-size:.8rem;cursor:pointer;transition:.18s}
+  .currency button.active{background:var(--green);color:#fff;border-color:var(--green)}
+  .denoms{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .denom{position:relative;border:1px solid var(--line);border-radius:15px;padding:13px 10px 12px;cursor:pointer;transition:.18s;min-height:103px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;background:#fff;user-select:none}
+  .denom:hover{border-color:#9bcab0;transform:translateY(-2px)}
+  .denom.selected{background:#f0faf3;border-color:#68ad88;box-shadow:inset 0 0 0 1px #68ad88}
+  .denom-top{display:flex;align-items:center;justify-content:space-between;width:100%;gap:6px}
+  .denom-value{font-size:1.12rem;font-weight:850;letter-spacing:-.04em}
+  .denom-kind{font-size:.69rem;color:var(--muted);font-weight:650}
+  .check{width:18px;height:18px;border:1.5px solid #cad7ce;border-radius:6px;display:grid;place-items:center;color:transparent;font-size:12px;flex-shrink:0}
+  .selected .check{background:var(--green);border-color:var(--green);color:white}
+  .denom-icon{font-size:1.25rem;line-height:1;margin:5px 0}
+  .denom-foot{font-size:.7rem;color:var(--muted)}
+  .denom-foot b{color:var(--green)}
+  .actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:16px}
+  .text-btn{border:0;background:transparent;color:var(--green);font-size:.82rem;font-weight:800;cursor:pointer;padding:7px 0}
+  .selection-count{color:var(--muted);font-size:.78rem}
+  .amount-label{display:block;font-size:.82rem;font-weight:800;margin-bottom:10px}
+  .amount-box{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:16px;padding:5px 7px 5px 16px;transition:.2s}
+  .amount-box:focus-within{border-color:#60a47e;box-shadow:0 0 0 4px #dff2e5}
+  .symbol{font-size:1.15rem;color:var(--green);font-weight:850;margin-right:9px}
+  #amount{width:100%;min-width:0;border:0;outline:0;background:transparent;font-size:1.7rem;font-weight:850;letter-spacing:-.05em;color:var(--ink);padding:11px 0}
+  #amount::placeholder{color:#c1ccc5}
+  .solve{border:0;border-radius:12px;background:var(--green);color:white;padding:13px 18px;font-size:.87rem;font-weight:850;cursor:pointer;white-space:nowrap;box-shadow:0 6px 14px #176b5025;transition:.18s}
+  .solve:hover{background:#10563f;transform:translateY(-1px)}
+  .quick{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0 22px}
+  .quick span{font-size:.76rem;color:var(--muted);margin-right:2px}
+  .quick button{border:1px solid var(--line);background:#f8faf8;border-radius:8px;padding:6px 9px;font-size:.76rem;color:#4d6559;cursor:pointer}
+  .quick button:hover{background:var(--mint);border-color:#b7d9c3}
+  .result{background:#123f30;border-radius:18px;padding:22px;color:white;position:relative;overflow:hidden}
+  .result:after{content:"";position:absolute;right:-35px;top:-60px;width:170px;height:170px;border:1px solid #ffffff16;border-radius:50%;box-shadow:0 0 0 24px #ffffff08,0 0 0 48px #ffffff05;pointer-events:none}
+  .result-label{color:#b9d7c8;font-size:.77rem;font-weight:750;letter-spacing:.04em}
+  .result-total{font-size:2.6rem;font-weight:900;letter-spacing:-.07em;line-height:1.15;margin:8px 0 6px}
+  .result-caption{color:#b9d7c8;font-size:.83rem}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:17px}
+  .stat{background:#ffffff0d;border:1px solid #ffffff12;border-radius:12px;padding:12px}
+  .stat span{display:block;color:#b9d7c8;font-size:.72rem;margin-bottom:5px}
+  .stat strong{font-size:1.2rem;letter-spacing:-.04em}
+  .breakdown-head{display:flex;justify-content:space-between;align-items:center;margin:23px 0 12px}
+  .breakdown-head h3{font-size:.98rem;margin:0;letter-spacing:-.03em}
+  .min-badge{font-size:.7rem;font-weight:800;color:var(--green);background:var(--mint);padding:6px 9px;border-radius:999px}
+  .breakdown{display:flex;flex-direction:column;gap:10px}
+  .empty{border:1px dashed #d7e3da;border-radius:14px;padding:24px 16px;text-align:center;color:var(--muted);font-size:.84rem;line-height:1.6}
+  .empty .empty-icon{font-size:1.7rem;margin-bottom:6px}
+  .break-row{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px 12px;border:1px solid var(--line);border-radius:13px;animation:rise .3s both}
+  .money-icon{width:40px;height:40px;border-radius:12px;background:#f5e9c9;display:grid;place-items:center;font-size:1.15rem}
+  .break-row:nth-child(even) .money-icon{background:#e2f2e7}
+  .break-title{font-weight:850;font-size:.93rem}
+  .break-sub{font-size:.75rem;color:var(--muted);margin-top:3px}
+  .break-count{text-align:right;font-weight:850;font-size:.96rem}
+  .break-value{text-align:right;color:var(--muted);font-size:.74rem;margin-top:3px}
+  .bar{height:4px;background:#edf2ee;border-radius:9px;overflow:hidden;margin-top:8px}
+  .bar span{display:block;height:100%;background:linear-gradient(90deg,#218864,#b4dc72);border-radius:9px}
+  .message{margin-top:12px;font-size:.8rem;line-height:1.5;color:var(--muted)}
+  .message.error{color:#b34234;background:#fff1ef;border-radius:10px;padding:10px 12px}
+  .note{display:flex;gap:10px;align-items:flex-start;color:var(--muted);font-size:.78rem;line-height:1.55;margin-top:18px}
+  .note strong{color:var(--ink)}
+  footer{display:flex;justify-content:space-between;gap:12px;margin-top:30px;color:#89968e;font-size:.76rem}
+  @keyframes spin{to{transform:rotate(360deg)}}@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  @media(max-width:850px){.hero{grid-template-columns:1fr .6fr;gap:8px}.hero-art{transform:scale(.8)}.layout{grid-template-columns:1fr}.panel{padding:22px}}
+  @media(max-width:560px){.wrap{padding:18px 14px 32px}header{margin-bottom:30px}.tag{font-size:.68rem;padding:8px 10px}.hero{grid-template-columns:1fr;margin-bottom:23px}.hero-art{display:none}h1{font-size:3.1rem}.sub{font-size:.95rem}.panel{padding:18px;border-radius:18px}.denoms{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.denom{padding:11px 8px;min-height:96px}.denom-value{font-size:1rem}.amount-box{padding-left:12px}.solve{padding:12px}.result-total{font-size:2.35rem}footer{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M8 9.5c.5-2 7.5-2 8 0s-7 2-8 4.5 7.5 2.5 8 0M12 5v14"/></svg></div>ChangeLab</div>
+    <div class="tag">✦ The Coin Change Solver</div>
+  </header>
+  <section class="hero">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> Smart money, simplified</div>
+      <h1>Make exact change.<br><span>With less.</span></h1>
+      <p class="sub">Choose the coins and notes in your pocket, enter an amount, and find a way to make it using the fewest pieces possible.</p>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <div class="orbit"></div>
+      <div class="coin-stack"><div class="coin c1">৳</div><div class="coin c2">৳</div><div class="coin c3">+</div></div>
+    </div>
+  </section>
+
+  <main class="layout">
+    <section class="panel">
+      <div class="panel-head"><div><h2>01 / Your wallet</h2><p class="hint">Select every denomination you have available.</p></div><div class="step">01</div></div>
+      <div class="currency" aria-label="Currency">
+        <button class="active" data-currency="BDT">৳ BDT · Bangladesh</button>
+        <button data-currency="USD">$ USD · US</button>
+        <button data-currency="EUR">€ EUR · Euro</button>
+      </div>
+      <div class="denoms" id="denoms"></div>
+      <div class="actions"><span class="selection-count" id="selectionCount">0 denominations selected</span><button class="text-btn" id="selectAll">Select all</button><button class="text-btn" id="clearAll">Clear</button></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><div><h2>02 / Make your amount</h2><p class="hint">We'll find the minimum number of pieces.</p></div><div class="step">02</div></div>
+      <label class="amount-label" for="amount">AMOUNT YOU WANT TO OBTAIN</label>
+      <div class="amount-box"><span class="symbol" id="currencySymbol">৳</span><input id="amount" type="number" min="0" step="any" placeholder="e.g. 137" value="137" inputmode="decimal"><button class="solve" id="solve">Calculate ↗</button></div>
+      <div class="quick"><span>Try:</span><button data-amount="37">37</button><button data-amount="137">137</button><button data-amount="486">486</button><button data-amount="999">999</button></div>
+      <div class="result" aria-live="polite">
+        <div class="result-label">MINIMUM PIECES REQUIRED</div>
+        <div class="result-total" id="totalPieces">— pieces</div>
+        <div class="result-caption" id="resultCaption">Choose denominations and calculate.</div>
+        <div class="stats"><div class="stat"><span>Target amount</span><strong id="targetAmount">৳137</strong></div><div class="stat"><span>Change made</span><strong id="madeAmount">—</strong></div></div>
+      </div>
+      <div class="breakdown-head"><h3>Your change breakdown</h3><span class="min-badge" id="optimalBadge">MINIMUM PIECES</span></div>
+      <div class="breakdown" id="breakdown"><div class="empty"><div class="empty-icon">🪙</div>Select the denominations you have, then calculate to see your change.</div></div>
+      <div class="message" id="message"></div>
+      <div class="note"><span>ⓘ</span><div><strong>How it works:</strong> This uses dynamic programming to find the fewest coins/notes for the exact amount. It doesn't assume a greedy solution is always optimal. Each selected denomination is treated as available without a quantity limit.</div></div>
+    </section>
+  </main>
+  <footer><span>ChangeLab · A little algorithm magic.</span><span>Exact change, thoughtfully calculated.</span></footer>
+</div>
+<script>
+const currencies = {
+  BDT:{symbol:"৳",label:"BDT",denoms:[
+    {v:1000,kind:"Note",icon:"💵"},{v:500,kind:"Note",icon:"💵"},{v:200,kind:"Note",icon:"💴"},
+    {v:100,kind:"Note",icon:"💴"},{v:50,kind:"Note",icon:"💴"},{v:20,kind:"Note",icon:"💴"},
+    {v:10,kind:"Note",icon:"💴"},{v:5,kind:"Note",icon:"🧾"},{v:2,kind:"Coin",icon:"🪙"},{v:1,kind:"Coin",icon:"🪙"}
+  ]},
+  USD:{symbol:"$",label:"USD",denoms:[
+    {v:100,kind:"Note",icon:"💵"},{v:50,kind:"Note",icon:"💵"},{v:20,kind:"Note",icon:"💵"},{v:10,kind:"Note",icon:"💵"},{v:5,kind:"Note",icon:"💵"},{v:2,kind:"Coin",icon:"🪙"},{v:1,kind:"Coin",icon:"🪙"},{v:.5,kind:"Coin",icon:"🪙"},{v:.25,kind:"Coin",icon:"🪙"},{v:.1,kind:"Coin",icon:"🪙"},{v:.05,kind:"Coin",icon:"🪙"},{v:.01,kind:"Coin",icon:"🪙"}
+  ]},
+  EUR:{symbol:"€",label:"EUR",denoms:[
+    {v:500,kind:"Note",icon:"💶"},{v:200,kind:"Note",icon:"💶"},{v:100,kind:"Note",icon:"💶"},{v:50,kind:"Note",icon:"💶"},{v:20,kind:"Note",icon:"💶"},{v:10,kind:"Note",icon:"💶"},{v:5,kind:"Note",icon:"💶"},{v:2,kind:"Coin",icon:"🪙"},{v:1,kind:"Coin",icon:"🪙"},{v:.5,kind:"Coin",icon:"🪙"},{v:.2,kind:"Coin",icon:"🪙"},{v:.1,kind:"Coin",icon:"🪙"},{v:.05,kind:"Coin",icon:"🪙"},{v:.02,kind:"Coin",icon:"🪙"},{v:.01,kind:"Coin",icon:"🪙"}
+  ]}
+};
+let currency="BDT";
+let selected = new Set([1000,500,200,100,50,20,10,5,2,1]);
+const $=id=>document.getElementById(id);
+const fmt=(v)=>Number.isInteger(v)?String(v):v.toFixed(2).replace(/0+$/,"").replace(/\.$/,"");
+const money=(v)=>currencies[currency].symbol+fmt(v);
+function renderDenoms(){
+ const list=currencies[currency].denoms;
+ $('denoms').innerHTML=list.map(d=>`<div class="denom ${selected.has(d.v)?'selected':''}" role="checkbox" aria-checked="${selected.has(d.v)}" tabindex="0" data-value="${d.v}">
+   <div class="denom-top"><span class="denom-value">${currencies[currency].symbol}${fmt(d.v)}</span><span class="check">✓</span></div>
+   <div class="denom-icon">${d.icon}</div><div class="denom-foot">${d.kind} · <b>${selected.has(d.v)?'Included':'Tap to add'}</b></div>
+ </div>`).join('');
+ $('selectionCount').textContent=`${selected.size} denomination${selected.size===1?'':'s'} selected`;
+ $('selectAll').textContent=selected.size===list.length?'All selected':'Select all';
+}
+function toggleDenom(v){selected.has(v)?selected.delete(v):selected.add(v);renderDenoms()}
+$('denoms').addEventListener('click',e=>{const el=e.target.closest('.denom');if(el)toggleDenom(Number(el.dataset.value))});
+$('denoms').addEventListener('keydown',e=>{const el=e.target.closest('.denom');if(el&&(e.key==='Enter'||e.key===' ')){e.preventDefault();toggleDenom(Number(el.dataset.value))}});
+document.querySelectorAll('[data-currency]').forEach(btn=>btn.addEventListener('click',()=>{
+ currency=btn.dataset.currency;selected=new Set(currencies[currency].denoms.map(d=>d.v));
+ document.querySelectorAll('[data-currency]').forEach(b=>b.classList.toggle('active',b===btn));
+ $('currencySymbol').textContent=currencies[currency].symbol;
+ $('amount').value=currency==='BDT'?'137':currency==='USD'?'13.37':'13.37';
+ renderDenoms();calculate();
+}));
+$('selectAll').addEventListener('click',()=>{selected=new Set(currencies[currency].denoms.map(d=>d.v));renderDenoms()});
+$('clearAll').addEventListener('click',()=>{selected.clear();renderDenoms()});
+document.querySelectorAll('[data-amount]').forEach(b=>b.addEventListener('click',()=>{$('amount').value=b.dataset.amount;calculate()}));
+$('solve').addEventListener('click',calculate);
+$('amount').addEventListener('keydown',e=>{if(e.key==='Enter')calculate()});
+function calculate(){
+ const raw=Number($('amount').value),symbol=currencies[currency].symbol;
+ $('targetAmount').textContent=money(raw||0);$('message').className='message';$('message').textContent='';
+ $('breakdown').innerHTML='';
+ if($('amount').value.trim()===''||!Number.isFinite(raw)||raw<0){fail('Enter a valid amount greater than or equal to zero.');return}
+ if(selected.size===0&&raw>0){fail('Select at least one coin or note denomination first.');return}
+ const decimals=currency==='BDT'?0:2,scale=10**decimals;
+ if(Math.abs(raw*scale-Math.round(raw*scale))>1e-7){fail(decimals===0?'Bangladeshi taka amounts must be whole numbers.':'Enter an amount with no more than two decimal places.');return}
+ const target=Math.round(raw*scale);
+ const denoms=[...selected].map(v=>Math.round(v*scale)).filter(v=>v>0).sort((a,b)=>b-a);
+ if(target>2000000){fail('For performance, please enter an amount up to '+money(2000000/scale)+'.');return}
+ if(target===0){$('totalPieces').textContent='0 pieces';$('resultCaption').textContent='No coins or notes needed.';$('madeAmount').textContent=money(0);$('breakdown').innerHTML='<div class="empty"><div class="empty-icon">✨</div>Zero change needed. You are all set!</div>';return}
+ const dp=new Int32Array(target+1);dp.fill(1e9);dp[0]=0;
+ const prev=new Int32Array(target+1);prev.fill(-1);
+ for(let a=1;a<=target;a++){for(const d of denoms){if(d>a)continue;if(dp[a-d]+1<dp[a]){dp[a]=dp[a-d]+1;prev[a]=d}}}
+ if(dp[target]>=1e9){$('totalPieces').textContent='No exact change';$('resultCaption').textContent='This amount cannot be made with your selected denominations.';$('madeAmount').textContent='—';$('breakdown').innerHTML='<div class="empty"><div class="empty-icon">🧩</div>Try selecting smaller denominations, or choose a different amount.</div>';$('optimalBadge').textContent='NO SOLUTION';return}
+ const counts={};let a=target;
+ while(a>0&&prev[a]!==-1){const d=prev[a];counts[d]=(counts[d]||0)+1;a-=d}
+ const used=Object.keys(counts).map(Number).sort((a,b)=>b-a);
+ $('totalPieces').textContent=`${dp[target]} ${dp[target]===1?'piece':'pieces'}`;
+ $('resultCaption').textContent='Exact change, using the fewest pieces possible.';
+ $('madeAmount').textContent=money(target/scale);$('optimalBadge').textContent='OPTIMAL SOLUTION';
+ $('breakdown').innerHTML=used.map((d,i)=>{
+   const count=counts[d],value=d/scale,portion=(count*100/dp[target]).toFixed(0);
+   const denom=currencies[currency].denoms.find(x=>Math.round(x.v*scale)===d);
+   return `<div class="break-row" style="animation-delay:${i*45}ms"><div class="money-icon">${denom?.icon||'🪙'}</div><div><div class="break-title">${money(value)} ${denom?.kind||'piece'}${count>1?'s':''}</div><div class="break-sub">${count} × ${money(value)} = ${money(count*value)}</div><div class="bar"><span style="width:${portion}%"></span></div></div><div><div class="break-count">× ${count}</div><div class="break-value">${money(count*value)}</div></div></div>`;
+ }).join('');
+}
+function fail(msg){$('totalPieces').textContent='Let’s fix that';$('resultCaption').textContent='We need a little more information.';$('madeAmount').textContent='—';$('breakdown').innerHTML='<div class="empty"><div class="empty-icon">🪙</div>Your solution will appear here.</div>';$('optimalBadge').textContent='WAITING';$('message').className='message error';$('message').textContent=msg}
+renderDenoms();calculate();
+</script>
+</body>
+</html>
